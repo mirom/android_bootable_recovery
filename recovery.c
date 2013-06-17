@@ -203,6 +203,7 @@ get_args(int *argc, char ***argv) {
     if (*argc <= 1) {
         FILE *fp = fopen_path(COMMAND_FILE, "r");
         if (fp != NULL) {
+            char *token;
             char *argv0 = (*argv)[0];
             *argv = (char **) malloc(sizeof(char *) * MAX_ARGS);
             (*argv)[0] = argv0;  // use the same program name
@@ -210,7 +211,12 @@ get_args(int *argc, char ***argv) {
             char buf[MAX_ARG_LENGTH];
             for (*argc = 1; *argc < MAX_ARGS; ++*argc) {
                 if (!fgets(buf, sizeof(buf), fp)) break;
-                (*argv)[*argc] = strdup(strtok(buf, "\r\n"));  // Strip newline.
+                token = strtok(buf, "\r\n");
+                if (token != NULL) {
+                    (*argv)[*argc] = strdup(token);  // Strip newline.
+                } else {
+                    --*argc;
+                }
             }
 
             check_and_fclose(fp, COMMAND_FILE);
@@ -730,20 +736,8 @@ prompt_and_wait() {
                 }
                 break;
 
-            case ITEM_APPLY_SDCARD:
+            case ITEM_APPLY_ZIP:
                 show_install_update_menu();
-                break;
-
-            case ITEM_APPLY_SIDELOAD:
-                if(is_dualsystem()) {
-                    int system = select_system("Choose system to install zip:");
-                    if (system>=0) {
-                        if(set_active_system(system)!=0)
-                            ui_print("Failed setting system. Please REBOOT!\n");
-                        else apply_from_adb();
-                    }
-                }
-                else apply_from_adb();
                 break;
 
             case ITEM_NANDROID:
